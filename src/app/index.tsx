@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,14 +26,18 @@ const sections = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   const [isDark, setIsDark] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setLoading(false);
-    }, 1500);
+    }, 800);
+
+    return () => clearTimeout(timer);
   }, []);
 
   function handleItemPress(item: string) {
@@ -40,6 +46,11 @@ export default function HomeScreen() {
     } else {
       Alert.alert('✅ არჩეული პროდუქტი', `შენ აირჩიე: ${item}`);
     }
+  }
+
+  async function handleLogout() {
+    await AsyncStorage.removeItem('userToken');
+    router.replace('/login');
   }
 
   if (loading) {
@@ -57,6 +68,29 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.logo}>🥬 Fresh Basket</Text>
         <Text style={styles.subtitle}>სუფთა და ჯანსაღი არჩევანი</Text>
+      </View>
+
+      <View style={styles.navigation}>
+        <Pressable
+          style={styles.navButton}
+          onPress={() => router.push('/products')}
+        >
+          <Text style={styles.navText}>🛍️ პროდუქტები</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.navButton}
+          onPress={() => router.push('/cart')}
+        >
+          <Text style={styles.navText}>🛒 კალათა</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.navButton}
+          onPress={() => router.push('/profile')}
+        >
+          <Text style={styles.navText}>👤 პროფილი</Text>
+        </Pressable>
       </View>
 
       <View style={styles.switchRow}>
@@ -101,9 +135,19 @@ export default function HomeScreen() {
           styles.button,
           pressed && styles.buttonPressed,
         ]}
-        onPress={() => setModalVisible(true)}
+        onPress={() => router.push('/cart')}
       >
         <Text style={styles.buttonText}>🛒 კალათის ნახვა</Text>
+      </Pressable>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.logoutButton,
+          pressed && styles.buttonPressed,
+        ]}
+        onPress={handleLogout}
+      >
+        <Text style={styles.buttonText}>🚪 გამოსვლა</Text>
       </Pressable>
 
       <Modal
@@ -119,14 +163,17 @@ export default function HomeScreen() {
             <Text style={styles.modalTitle}>თქვენი კალათა</Text>
 
             <Text style={styles.modalText}>
-              კალათა ჯერ ცარიელია. აირჩიეთ სასურველი პროდუქტი.
+              კალათის სანახავად გადადით კალათის გვერდზე.
             </Text>
 
             <Pressable
               style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
+              onPress={() => {
+                setModalVisible(false);
+                router.push('/cart');
+              }}
             >
-              <Text style={styles.buttonText}>დახურვა</Text>
+              <Text style={styles.buttonText}>კალათის გახსნა</Text>
             </Pressable>
           </View>
         </View>
@@ -151,7 +198,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#16a34a',
     padding: 22,
     borderRadius: 24,
-    marginBottom: 22,
+    marginBottom: 15,
     shadowColor: '#166534',
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -168,6 +215,29 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#dcfce7',
     fontSize: 15,
+  },
+
+  navigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 15,
+  },
+
+  navButton: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+
+  navText: {
+    color: '#166534',
+    fontSize: 13,
+    fontWeight: '700',
   },
 
   switchRow: {
@@ -238,8 +308,17 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
 
+  logoutButton: {
+    backgroundColor: '#dc2626',
+    padding: 15,
+    borderRadius: 18,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 8,
+  },
+
   buttonPressed: {
-    backgroundColor: '#15803d',
+    opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
 
@@ -299,10 +378,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+    textAlignVertical: 'center',
   },
 
   closeButton: {
-    backgroundColor: '#dc2626',
+    backgroundColor: '#16a34a',
     paddingVertical: 13,
     paddingHorizontal: 32,
     borderRadius: 14,
